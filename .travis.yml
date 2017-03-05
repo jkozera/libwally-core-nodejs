@@ -1,0 +1,50 @@
+git:
+    depth: 5
+branches:
+    only:
+      - master
+language: node_js
+node_js:
+  - "6"
+sudo: required
+os:
+  - linux
+  - osx
+osx_image: xcode8.2
+dist: trusty
+compiler:
+  - clang
+  - gcc
+addons:
+    apt:
+        packages:
+          - python
+          - python-dev
+          - python3
+          - python3-dev
+          - swig3.0
+          - swig
+
+install:
+  - cd libwally-core && ./tools/cleanup.sh && ./tools/autogen.sh
+  - ./configure && make
+  - cd src/swig_js
+  - python makewrappers/wrap.py
+  - cd ..
+  # Brew on macOS has up to date SWIG already:
+  - bash -c '[ "$TRAVIS_OS_NAME" = "osx" ] || (wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz && tar -zxf swig-3.0.12.tar.gz && mkdir swig-prefix && cd swig-3.0.12 && ./configure --prefix=$PWD/../swig-prefix && make && make install && cd .. && ./swig-prefix/bin/swig -javascript -node -c++ swig_js/swig.i)'
+  - bash -c 'if [ "$TRAVIS_OS_NAME" = "osx" ]; then swig -javascript -node -c++ swig_js/swig.i; fi'
+  - cd swig_js
+  - npm i -g node-gyp
+  - node-gyp configure && node-gyp build
+  - npm i tape
+
+before_install:
+  - git clone https://github.com/jkozera/libwally-core.git -b swig-js
+  - ./libwally-core/tools/travis_install.sh
+
+script:
+  - node test/test_hash.js
+
+notifications:
+    email: false
