@@ -39,7 +39,7 @@ before_install:
   - ./libwally-core/tools/travis_install.sh
 
 script:
-  - node test/test_hash.js
+  - ./node_modules/.bin/tape test/test_*.js
 
 notifications:
     email: false
